@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Hello WebSocket</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+</head>
+<body>
+<noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websocket relies on Javascript being
+    enabled. Please enable
+    Javascript and reload this page!</h2></noscript>
+<div id="main-content" class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="connect">WebSocket connection:</label>
+                    <button id="connect" class="btn btn-default" type="submit">Connect</button>
+                    <button id="disconnect" class="btn btn-default" type="submit" disabled="disabled">Disconnect
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="message">What is your message?</label>
+                    <input type="text" id="message" class="form-control" placeholder="Your message here...">
+                </div>
+                <button id="send" class="btn btn-default" type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <table id="conversation" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Messages</th>
+                </tr>
+                </thead>
+                <tbody id="messages">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const connectBtn = document.getElementById("connect");
+    const disconnectBtn = document.getElementById("disconnect");
+    const sendBtn = document.getElementById("send");
+    const conversationArea = document.getElementById("conversation");
+    const messagesBody = document.getElementById("messages");
+    const messageInput = document.getElementById("message");
+    const forms = document.getElementsByTagName("form");
+
+    for (let formElement of forms)
+        formElement.onsubmit = e => e.preventDefault();
+
+    const setConnected = (connected) => {
+        connectBtn.disabled = connected;
+        disconnectBtn.disabled = !connected;
+        conversationArea.style.display = connected ? "block" : "none";
+    }
+
+    let websocket = null;
+    const connect = () => {
+        websocket = new WebSocket("ws://localhost:8080/chat");
+        websocket.onopen = () => {
+            setConnected(true);
+            websocket.send("subscribe");
+        };
+        websocket.onclose = () => disconnect(false);
+        websocket.onmessage = event => showMessage(event.data)
+    }
+
+    const disconnect = () => {
+        setConnected(false);
+        messagesBody.innerHTML = "";
+        websocket.send("unsubscribe");
+        console.log("Disconnected");
+    }
+
+    const sendMessage = () => websocket.send(messageInput.value);
+
+    const showMessage = message => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${message}</td>`
+        messagesBody.appendChild(tr);
+    }
+    connectBtn.onclick = connect;
+    disconnectBtn.onclick = disconnect;
+    sendBtn.onclick = sendMessage;
+</script>
+</body>
+</html>
