@@ -25,6 +25,7 @@
 #include <iostream>
 #include <cstdint>
 #include <Keypad.h>
+#include "AESUtil.h"
 
 const char *serverAddress = "192.168.1.105";
 const char *serverUrl = "/chat";
@@ -42,8 +43,10 @@ void displayDigit(const int *pins);
 void displayNumbers(int, int, int, int);
 void enableAnswerMode();
 void enableCountDownMode();
+void enableLoginMode();
 void modeA(char);
 void modeC(char);
+void modeD(char);
 void disableModes();
 void count_down();
 
@@ -98,6 +101,8 @@ String count_down_value_str = "";
 bool answer_mode = false;
 String answer_value_str = "";
 
+bool login_mode = false;
+
 void hexdump(const void *mem, uint32_t len, uint8_t cols = 16)
 {
   const uint8_t *src = (const uint8_t *)mem;
@@ -117,6 +122,8 @@ void hexdump(const void *mem, uint32_t len, uint8_t cols = 16)
 void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
 {
   String message = (char *)payload;
+  if (message.startsWith("{e}"))
+    message = decryptAES(message.substring(3).c_str());
 
   switch (type)
   {
@@ -161,7 +168,6 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
 
 void setup()
 {
-
   pinMode(connected_websocket_pin, OUTPUT);
   for (int pin : digits)
     pinMode(pin, OUTPUT);
@@ -218,6 +224,9 @@ void loop()
   if (key == 'C')
     enableAnswerMode();
 
+  if (key == 'D')
+    enableLoginMode();
+
   modeA(key);
 
   modeC(key);
@@ -229,6 +238,7 @@ void disableModes()
 {
   answer_mode = false;
   count_down_mode = false;
+  login_mode = false;
   answer_value_str = "";
   count_down_value = 0;
   count_down_value_str = "";
@@ -242,10 +252,20 @@ void enableCountDownMode()
   delay(1000);
   digitalWrite(connected_websocket_pin, LOW);
 }
+
 void enableAnswerMode()
 {
   disableModes();
   answer_mode = true;
+  digitalWrite(connected_websocket_pin, HIGH);
+  delay(1000);
+  digitalWrite(connected_websocket_pin, LOW);
+}
+
+void enableLoginMode()
+{
+  disableModes();
+  login_mode = true;
   digitalWrite(connected_websocket_pin, HIGH);
   delay(1000);
   digitalWrite(connected_websocket_pin, LOW);
@@ -287,7 +307,36 @@ void modeC(char key)
   if (answer_mode)
   {
     if (key == '#')
-      webSocket.sendTXT(answer_value_str);
+    {
+      String payload = "{e}" + encryptAES(answer_value_str.c_str());
+
+      webSocket.sendTXT(payload);
+      answer_value_str = "";
+    }
+    // ascii for numbers
+    else if (key >= 48 && key <= 57 && count_down_value_str.length() < 4)
+      answer_value_str += key;
+    if (answer_value_str.length() <= 4)
+    {
+      int number = answer_value_str.toInt();
+      int thousands = number / 1000;
+      int hundreds = (number % 1000) / 100;
+      int tens = (number % 100) / 10;
+      int ones = number % 10;
+      displayNumbers(thousands, hundreds, tens, ones);
+    }
+  }
+}
+
+void modeD(char key)
+{
+  if (login_mode)
+  {
+    if (key == '#')
+    {
+      webSocket.sendTXT("{e}" + encryptAES(answer_value_str.c_str()));
+      answer_value_str = "";
+    }
     // ascii for numbers
     else if (key >= 48 && key <= 57 && count_down_value_str.length() < 4)
       answer_value_str += key;
