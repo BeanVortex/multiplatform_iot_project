@@ -41,6 +41,7 @@ WebSocketsClient webSocket;
 void displayDigit(const int *pins);
 void displayNumbers(int, int, int, int);
 
+const int connected_websocket_pin = 15;
 const int digits[] = {3, 9, 10, 6};
 
 const int numbers[10][7] = {
@@ -57,7 +58,6 @@ const int numbers[10][7] = {
 };
 //                      a   b   c   d   e  f   g
 const int segments[] = {21, 13, 47, 7, 5, 48, 14}; // Array of segment pins
-const int clock_beat_led = 4;
 // 0 a b c d e f      21 13 47 7 5 48
 // 1 b c              13 47
 // 2 a b g d e        21 13 14 7 5
@@ -125,13 +125,14 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
     {
       USE_SERIAL.printf("got %s\n", message.substring(11, length));
       count_down_value = message.substring(11, length).toInt();
-      USE_SERIAL.println(count_down_value);
+      if (count_down_value > 6000)
+        count_down_value = 6000;
     }
     if (strcmp((char *)payload, "Successfully subscribed") == 0)
     {
-      for (int pin : digits)
-        digitalWrite(pin, HIGH);
-      displayDigit(numbers[0]);
+      digitalWrite(connected_websocket_pin, HIGH);
+      delay(1000);
+      digitalWrite(connected_websocket_pin, LOW);
     }
 
     break;
@@ -149,6 +150,20 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
 
 void setup()
 {
+
+  pinMode(connected_websocket_pin, OUTPUT);
+  for (int pin : digits)
+    pinMode(pin, OUTPUT);
+
+  for (int pin : segments)
+  {
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, LOW);
+  }
+  displayDigit(numbers[0]);
+  for (int pin : digits)
+    digitalWrite(pin, HIGH);
+  displayDigit(numbers[0]);
 
   USE_SERIAL.begin(115200);
   USE_SERIAL.println();
@@ -175,19 +190,6 @@ void setup()
 
   // try ever 5000 again if connection has failed
   webSocket.setReconnectInterval(5000);
-
-  pinMode(clock_beat_led, OUTPUT);
-  for (int pin : digits)
-    pinMode(pin, OUTPUT);
-
-  for (int pin : segments)
-  {
-    pinMode(pin, OUTPUT);
-    digitalWrite(pin, LOW);
-  }
-  // digitalWrite(segments[7], HIGH);
-  displayDigit(numbers[0]);
-  Serial.begin(115200);
 }
 
 void loop()
@@ -202,34 +204,42 @@ void loop()
     count_down_value_str = "";
   }
 
-  if (key == 'A' || count_down_mode)
+  if (key == 'A')
   {
     count_down_mode = true;
+    count_down_value = 0;
+    count_down_value_str = "";
+    digitalWrite(connected_websocket_pin, HIGH);
+    delay(1000);
+    digitalWrite(connected_websocket_pin, LOW);
+  }
+
+  if (count_down_mode)
+  {
     if (key == '#' || count_down_value_str.length() == 4)
     {
       if (count_down_value_str.isEmpty())
         count_down_value = 0;
       else
       {
-        count_down_value = count_down_value_str.toInt();
+        int number = count_down_value_str.toInt();
+        if (number >= 9960)
+          number = 9959;
+        int minutes = number / 100;
+        int seconds = number % 100;
+        count_down_value = minutes * 60 + seconds;
         count_down_mode = false;
       }
     }
     // ascii for numbers
     else if (key >= 48 && key <= 57)
-    {
-      USE_SERIAL.println(key);
       count_down_value_str += key;
-      USE_SERIAL.println(count_down_value_str);
-    }
     int number = count_down_value_str.toInt();
-    int minutes = number / 60;
-    int seconds = number % 60;
-    int minuteTens = minutes / 10;
-    int minuteOnes = minutes % 10;
-    int secondTens = seconds / 10;
-    int secondOnes = seconds % 10;
-    displayNumbers(minuteTens, minuteOnes, secondTens, secondOnes);
+    int thousands = number / 1000;
+    int hundreds = (number % 1000) / 100;
+    int tens = (number % 100) / 10;
+    int ones = number % 10;
+    displayNumbers(thousands, hundreds, tens, ones);
   }
 
   count_down();
@@ -242,10 +252,6 @@ void count_down()
     static unsigned long previousMillis = 0;
     const unsigned long interval = 1000;
     unsigned long currentMillis = millis();
-
-    static unsigned long previousMillis2 = 0;
-    const unsigned long interval2 = 500;
-    unsigned long currentMillis2 = millis();
 
     int minutes = count_down_value / 60;
     int seconds = count_down_value % 60;
@@ -261,11 +267,6 @@ void count_down()
     {
       count_down_value--;
       previousMillis = currentMillis;
-    }
-    if (currentMillis2 - previousMillis2 >= interval2)
-    {
-      digitalWrite(clock_beat_led, !digitalRead(clock_beat_led));
-      previousMillis2 = currentMillis2;
     }
   }
   else if (!count_down_mode)
