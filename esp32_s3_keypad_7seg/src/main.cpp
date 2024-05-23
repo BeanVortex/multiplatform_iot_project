@@ -49,8 +49,11 @@ void modeC(char);
 void modeD(char);
 void disableModes();
 void count_down();
+void errorBlink();
+void successBlink();
 
-const int connected_websocket_pin = 15;
+const int error_led = 15;
+const int success_led = 16;
 const int digits[] = {3, 9, 10, 6};
 
 const int numbers[10][7] = {
@@ -102,6 +105,7 @@ bool answer_mode = false;
 String answer_value_str = "";
 
 bool login_mode = false;
+bool login_status = false;
 
 void hexdump(const void *mem, uint32_t len, uint8_t cols = 16)
 {
@@ -129,6 +133,8 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
   {
   case WStype_DISCONNECTED:
     USE_SERIAL.printf("[WSc] Disconnected!\n");
+    errorBlink();
+    login_status = false;
     break;
   case WStype_CONNECTED:
     USE_SERIAL.printf("[WSc] Connected to url: %s\n", payload);
@@ -137,21 +143,36 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
   case WStype_TEXT:
     USE_SERIAL.print("[WSc] get text: ");
     USE_SERIAL.println(message);
-    if (message.startsWith("count_down="))
+    if (message.equals("Successfully subscribed"))
+      successBlink();
+
+    if (login_status)
     {
-      USE_SERIAL.printf("got %s\n", message.substring(11, length));
-      count_down_value = message.substring(11, length).toInt();
-      if (count_down_value > 6000)
-        count_down_value = 5999;
+      if (message.startsWith("count_down="))
+      {
+        USE_SERIAL.printf("got %s\n", message.substring(11, length));
+        count_down_value = message.substring(11, length).toInt();
+        if (count_down_value > 6000)
+          count_down_value = 5999;
+      }
+      if (message.startsWith("question="))
+      {
+        answer_mode = true;
+        enableAnswerMode();
+      }
     }
-    if (strcmp((char *)payload, "Successfully subscribed") == 0)
+
+    if (message.equals("login success"))
     {
-      digitalWrite(connected_websocket_pin, HIGH);
-      delay(1000);
-      digitalWrite(connected_websocket_pin, LOW);
+      login_status = true;
+      successBlink();
     }
-    if (message.startsWith("question="))
-      enableAnswerMode();
+
+    if (message.equals("Correct answer"))
+      successBlink();
+
+    if (message.equals("login failed") || message.equals("Wrong answer"))
+      errorBlink();
 
     break;
   case WStype_BIN:
@@ -160,6 +181,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
     break;
   case WStype_ERROR:
     USE_SERIAL.printf("[WSc] Error!\n");
+    errorBlink();
     break;
   default:
     USE_SERIAL.printf("[WSc] Unknown event type: %u\n", type);
@@ -168,7 +190,8 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
 
 void setup()
 {
-  pinMode(connected_websocket_pin, OUTPUT);
+  pinMode(error_led, OUTPUT);
+  pinMode(success_led, OUTPUT);
   for (int pin : digits)
     pinMode(pin, OUTPUT);
 
@@ -183,9 +206,7 @@ void setup()
   displayDigit(numbers[0]);
 
   USE_SERIAL.begin(115200);
-  USE_SERIAL.println();
-  USE_SERIAL.println();
-  USE_SERIAL.println();
+  USE_SERIAL.println("\n\n");
   USE_SERIAL.println("connecting to wifi");
 
   for (uint8_t t = 4; t > 0; t--)
@@ -196,17 +217,17 @@ void setup()
   }
 
   WiFi_multi.addAP(ssid, password);
-  USE_SERIAL.println("wifi connected");
 
   while (WiFi_multi.run() != WL_CONNECTED)
     delay(100);
+  USE_SERIAL.println("wifi connected");
 
   webSocket.begin(serverAddress, serverPort, serverUrl);
 
   webSocket.onEvent(webSocketEvent);
 
   // try ever 5000 again if connection has failed
-  webSocket.setReconnectInterval(5000);
+  webSocket.setReconnectInterval(3000);
 }
 
 void loop()
@@ -231,6 +252,8 @@ void loop()
 
   modeC(key);
 
+  modeD(key);
+
   count_down();
 }
 
@@ -246,29 +269,45 @@ void disableModes()
 
 void enableCountDownMode()
 {
+  if (!login_status)
+  {
+    errorBlink();
+    return;
+  }
   disableModes();
   count_down_mode = true;
-  digitalWrite(connected_websocket_pin, HIGH);
-  delay(1000);
-  digitalWrite(connected_websocket_pin, LOW);
+  successBlink();
 }
 
 void enableAnswerMode()
 {
+  if (!login_status)
+  {
+    errorBlink();
+    return;
+  }
+  if (!answer_mode)
+  {
+    String value = "new_question";
+    String encrypted = "{e}" + encryptAES(value.c_str());
+    webSocket.sendTXT(encrypted);
+  }
+
   disableModes();
   answer_mode = true;
-  digitalWrite(connected_websocket_pin, HIGH);
-  delay(1000);
-  digitalWrite(connected_websocket_pin, LOW);
+  successBlink();
 }
 
 void enableLoginMode()
 {
+  if (login_status)
+  {
+    errorBlink();
+    return;
+  }
   disableModes();
   login_mode = true;
-  digitalWrite(connected_websocket_pin, HIGH);
-  delay(1000);
-  digitalWrite(connected_websocket_pin, LOW);
+  successBlink();
 }
 
 void modeA(char key)
@@ -308,10 +347,12 @@ void modeC(char key)
   {
     if (key == '#')
     {
-      String payload = "{e}" + encryptAES(answer_value_str.c_str());
+      String value = "answer=" + answer_value_str;
+      String payload = "{e}" + encryptAES(value.c_str());
 
       webSocket.sendTXT(payload);
       answer_value_str = "";
+      answer_mode = false;
     }
     // ascii for numbers
     else if (key >= 48 && key <= 57 && count_down_value_str.length() < 4)
@@ -334,11 +375,13 @@ void modeD(char key)
   {
     if (key == '#')
     {
-      webSocket.sendTXT("{e}" + encryptAES(answer_value_str.c_str()));
+      String value = "login_pass=" + answer_value_str;
+      webSocket.sendTXT("{e}" + encryptAES(value.c_str()));
       answer_value_str = "";
+      login_mode = false;
     }
     // ascii for numbers
-    else if (key >= 48 && key <= 57 && count_down_value_str.length() < 4)
+    else if (key >= 48 && key <= 57 && answer_value_str.length() < 4)
       answer_value_str += key;
     if (answer_value_str.length() <= 4)
     {
@@ -376,7 +419,7 @@ void count_down()
       previousMillis = currentMillis;
     }
   }
-  else if (!count_down_mode && !answer_mode)
+  else if (!count_down_mode && !answer_mode && !login_mode)
     displayNumbers(0, 0, 0, 0);
 }
 
@@ -411,4 +454,22 @@ void displayNumbers(int thousands, int hundreds, int tens, int ones)
   digitalWrite(digits[0], HIGH);
   displayDigit(numbers[thousands]);
   delay(1);
+}
+
+void errorBlink()
+{
+  for (size_t i = 0; i < 3; i++)
+  {
+    digitalWrite(error_led, HIGH);
+    delay(200);
+    digitalWrite(error_led, LOW);
+    delay(200);
+  }
+}
+
+void successBlink()
+{
+  digitalWrite(success_led, HIGH);
+  delay(1000);
+  digitalWrite(success_led, LOW);
 }

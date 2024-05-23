@@ -1,44 +1,24 @@
 package com.example.demo_websocket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+
+import static com.example.demo_websocket.AESUtil.decrypt;
+import static com.example.demo_websocket.AESUtil.encryptedTextMessage;
 
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
 
     private final Set<WebSocketSession> subscribedSessions = new HashSet<>();
-    private static final String ALGORITHM = "AES";
-    private static final String KEY = "%HELLO_KEY%&1556";
     private static final String LOGIN_PASS = "1234";
     private int questionResult;
-
-    public static String encrypt(String data) throws Exception {
-        var secretKey = new SecretKeySpec(KEY.getBytes(), ALGORITHM);
-        var cipher = Cipher.getInstance(ALGORITHM);
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-        var encrypted = cipher.doFinal(data.getBytes());
-        return Base64.getEncoder().encodeToString(encrypted);
-    }
-
-    public static String decrypt(String encryptedData) throws Exception {
-        var secretKey = new SecretKeySpec(KEY.getBytes(), ALGORITHM);
-        var cipher = Cipher.getInstance(ALGORITHM);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey);
-        var decodedBytes = Base64.getDecoder().decode(encryptedData);
-        var decrypted = cipher.doFinal(decodedBytes);
-        return new String(decrypted);
-    }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
@@ -48,11 +28,11 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
         if (payload.equalsIgnoreCase("subscribe")) {
             if (subscribedSessions.contains(session)) {
-                session.sendMessage(new TextMessage("You have already subscribed to channel"));
+                session.sendMessage(encryptedTextMessage("You have already subscribed to channel"));
                 return;
             }
             subscribedSessions.add(session);
-            session.sendMessage(new TextMessage("Successfully subscribed"));
+            session.sendMessage(encryptedTextMessage("Successfully subscribed"));
         } else if (payload.equalsIgnoreCase("unsubscribe")) {
             subscribedSessions.remove(session);
         } else if (payload.startsWith("login_pass")) {
@@ -62,14 +42,14 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 broadcastMessage("login failed");
         } else if (payload.startsWith("new_question")) {
             var question = generateArithmeticQuestion();
-            broadcastMessage("{e}" + encrypt("question=" + question));
+            broadcastMessage("question=" + question);
         } else if (payload.startsWith("answer")) {
             if (questionResult == Integer.parseInt(payload.substring(payload.indexOf("=") + 1)))
                 broadcastMessage("Correct answer");
             else
                 broadcastMessage("Wrong answer");
         } else {
-            broadcastMessage("{e}" + encrypt(payload));
+            broadcastMessage(payload);
         }
     }
 
@@ -97,7 +77,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private void broadcastMessage(String message) throws Exception {
         for (var subscriber : subscribedSessions)
             if (subscriber.isOpen())
-                subscriber.sendMessage(new TextMessage(message));
+                subscriber.sendMessage(encryptedTextMessage(message));
     }
 
     @Override
