@@ -40,6 +40,12 @@ WebSocketsClient webSocket;
 
 void displayDigit(const int *pins);
 void displayNumbers(int, int, int, int);
+void enableAnswerMode();
+void enableCountDownMode();
+void modeA(char);
+void modeC(char);
+void disableModes();
+void count_down();
 
 const int connected_websocket_pin = 15;
 const int digits[] = {3, 9, 10, 6};
@@ -89,6 +95,9 @@ int count = 0;
 bool count_down_mode = false;
 String count_down_value_str = "";
 
+bool answer_mode = false;
+String answer_value_str = "";
+
 void hexdump(const void *mem, uint32_t len, uint8_t cols = 16)
 {
   const uint8_t *src = (const uint8_t *)mem;
@@ -126,7 +135,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
       USE_SERIAL.printf("got %s\n", message.substring(11, length));
       count_down_value = message.substring(11, length).toInt();
       if (count_down_value > 6000)
-        count_down_value = 6000;
+        count_down_value = 5999;
     }
     if (strcmp((char *)payload, "Successfully subscribed") == 0)
     {
@@ -134,6 +143,8 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
       delay(1000);
       digitalWrite(connected_websocket_pin, LOW);
     }
+    if (message.startsWith("question="))
+      enableAnswerMode();
 
     break;
   case WStype_BIN:
@@ -199,24 +210,52 @@ void loop()
   char key = customKeypad.getKey();
 
   if (key == 'B')
-  {
-    count_down_value = 0;
-    count_down_value_str = "";
-  }
+    disableModes();
 
   if (key == 'A')
-  {
-    count_down_mode = true;
-    count_down_value = 0;
-    count_down_value_str = "";
-    digitalWrite(connected_websocket_pin, HIGH);
-    delay(1000);
-    digitalWrite(connected_websocket_pin, LOW);
-  }
+    enableCountDownMode();
 
+  if (key == 'C')
+    enableAnswerMode();
+
+  modeA(key);
+
+  modeC(key);
+
+  count_down();
+}
+
+void disableModes()
+{
+  answer_mode = false;
+  count_down_mode = false;
+  answer_value_str = "";
+  count_down_value = 0;
+  count_down_value_str = "";
+}
+
+void enableCountDownMode()
+{
+  disableModes();
+  count_down_mode = true;
+  digitalWrite(connected_websocket_pin, HIGH);
+  delay(1000);
+  digitalWrite(connected_websocket_pin, LOW);
+}
+void enableAnswerMode()
+{
+  disableModes();
+  answer_mode = true;
+  digitalWrite(connected_websocket_pin, HIGH);
+  delay(1000);
+  digitalWrite(connected_websocket_pin, LOW);
+}
+
+void modeA(char key)
+{
   if (count_down_mode)
   {
-    if (key == '#' || count_down_value_str.length() == 4)
+    if (key == '#')
     {
       if (count_down_value_str.isEmpty())
         count_down_value = 0;
@@ -232,7 +271,7 @@ void loop()
       }
     }
     // ascii for numbers
-    else if (key >= 48 && key <= 57)
+    else if (key >= 48 && key <= 57 && count_down_value_str.length() < 4)
       count_down_value_str += key;
     int number = count_down_value_str.toInt();
     int thousands = number / 1000;
@@ -241,8 +280,27 @@ void loop()
     int ones = number % 10;
     displayNumbers(thousands, hundreds, tens, ones);
   }
+}
 
-  count_down();
+void modeC(char key)
+{
+  if (answer_mode)
+  {
+    if (key == '#')
+      webSocket.sendTXT(answer_value_str);
+    // ascii for numbers
+    else if (key >= 48 && key <= 57 && count_down_value_str.length() < 4)
+      answer_value_str += key;
+    if (answer_value_str.length() <= 4)
+    {
+      int number = answer_value_str.toInt();
+      int thousands = number / 1000;
+      int hundreds = (number % 1000) / 100;
+      int tens = (number % 100) / 10;
+      int ones = number % 10;
+      displayNumbers(thousands, hundreds, tens, ones);
+    }
+  }
 }
 
 void count_down()
@@ -269,7 +327,7 @@ void count_down()
       previousMillis = currentMillis;
     }
   }
-  else if (!count_down_mode)
+  else if (!count_down_mode && !answer_mode)
     displayNumbers(0, 0, 0, 0);
 }
 
