@@ -27,10 +27,6 @@ void setup()
 
 void loop()
 {
-  if (espSerial.available() > 0) {
-    // Read the incoming string until newline and print it
-    String receivedText = espSerial.readStringUntil('\n');
-    Serial.print("Received: ");
-    Serial.println(receivedText);
-  }
+    espSerial.println("Hello from nano");
+    delay(1000);
 }
