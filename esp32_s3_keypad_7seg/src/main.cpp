@@ -20,9 +20,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiMulti.h>
-#include <string>
-#include <iostream>
-#include <cstdint>
 #include <Keypad.h>
 #include "./utils/DisplayUtil.h"
 #include "./utils/WebsocketUtil.h"
@@ -70,7 +67,7 @@ void setup()
 
   USE_SERIAL.begin(115200);
   USE_SERIAL.println("\n\n");
-  USE_SERIAL.println("connecting to wifi");
+  USE_SERIAL.println("Connecting to wifi");
 
   for (uint8_t t = 4; t > 0; t--)
   {

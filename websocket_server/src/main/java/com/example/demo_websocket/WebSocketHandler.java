@@ -45,9 +45,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
             broadcastMessage("question=" + question);
         } else if (payload.startsWith("answer")) {
             if (questionResult == Integer.parseInt(payload.substring(payload.indexOf("=") + 1)))
-                broadcastMessage("Correct answer");
+                broadcastMessage("answer_result=Correct answer");
             else
-                broadcastMessage("Wrong answer");
+                broadcastMessage("answer_result=Wrong answer");
         } else {
             broadcastMessage(payload);
         }
@@ -65,7 +65,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
             case '*' -> questionResult = num1 * num2;
             case '/' -> questionResult = num1 > num2 ? num1 / num2 : num2 / num1;
         }
-        return num1 + " " + operator + " " + num2;
+        return num1 > num2
+                ? num1 + " " + operator + " " + num2
+                : num2 + " " + operator + " " + num1;
     }
 
     private char getRandomOperator(Random random) {

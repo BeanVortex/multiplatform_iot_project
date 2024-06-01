@@ -10,23 +10,61 @@
 // 7    nu      10  u
 
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
+#include "./utils/WebsocketUtil.h"
 
-#define RXD1 8
-#define TXD1 2
+const char *ssid = "TP-LINK_DE179F";
+const char *password = "12345678";
+
+ESP8266WiFiMulti WiFiMulti;
+const int buzz = 5;
 
 void setup()
 {
   Serial.begin(9600);
   Serial1.begin(115200);
+
+  Serial1.println("Connecting to wifi");
+  pinMode(buzz, OUTPUT);
+
+  WiFiMulti.addAP(ssid, password);
+  while (WiFiMulti.run() != WL_CONNECTED)
+  {
+    Serial1.print('.');
+    delay(500);
+  }
+  Serial1.println("\nWifi connected");
+  Serial.flush();
+  initWebsocket();
+}
+
+void playFireWarningTone()
+{
+  int melody[] = {784, 659, 523, 784, 659, 523};
+  int noteDurations[] = {250, 250, 500, 250, 250, 500};
+
+    for (int thisNote = 0; thisNote < 6; thisNote++)
+    {
+      int noteDuration = noteDurations[thisNote];
+      tone(buzz, melody[thisNote], noteDuration);
+      delay(noteDuration * 1.30);
+    }
+  noTone(buzz);
 }
 
 void loop()
 {
-  if (Serial.available() > 0) {
-    // Read the incoming string until newline and print it
+  websocketLoop();
+
+  if (Serial.available() > 0)
+  {
     String receivedText = Serial.readStringUntil('\n');
     Serial1.print("Received: ");
     Serial1.println(receivedText);
-    delay(1000);
+    if (receivedText.startsWith("Fire"))
+      playFireWarningTone();
+
+    websocketSendTXT(receivedText);
   }
 }
