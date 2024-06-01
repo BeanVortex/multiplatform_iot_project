@@ -13,7 +13,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
     if (message.startsWith("{e}"))
         message = decryptAES(message.substring(3).c_str());
 
-    if (message.equals("Fire"))
+    if (message.startsWith("Fire"))
         return;
 
     switch (type)

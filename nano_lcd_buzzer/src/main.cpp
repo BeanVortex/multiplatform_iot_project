@@ -13,6 +13,7 @@ const int firePin = 3;
 void handleFireWarning()
 {
   espSerial.println("Fire");
+  Serial.println("fire");
 }
 
 void setup()
@@ -61,8 +62,4 @@ void loop()
         lcd.print(msg);
     }
   }
-
-  // lcd.setCursor(0, 1);
-  // // print the number of seconds since reset:
-  // lcd.print(millis() / 1000);
 }
