@@ -9,11 +9,19 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 const int dispLen = 16;
 
 const int firePin = 3;
+const unsigned long debounceDelay = 300;
+volatile unsigned long lastInterruptTime = 0;
 
 void handleFireWarning()
 {
-  espSerial.println("Fire");
-  Serial.println("fire");
+  unsigned long currentTime = millis();
+  if (currentTime - lastInterruptTime > debounceDelay)
+  {
+    espSerial.println("Fire");
+    lcd.clear();
+    lcd.print("Fire detected");
+    lastInterruptTime = currentTime;
+  }
 }
 
 void setup()
@@ -21,9 +29,9 @@ void setup()
   Serial.begin(115200);
   espSerial.begin(9600);
   pinMode(firePin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(firePin), handleFireWarning, FALLING);
   lcd.begin(16, 2);
   lcd.print("No messages here");
+  attachInterrupt(digitalPinToInterrupt(firePin), handleFireWarning, FALLING);
 }
 
 void loop()
@@ -32,7 +40,10 @@ void loop()
   {
     String receivedText = espSerial.readStringUntil('\n');
     Serial.println(receivedText);
-    if (receivedText.startsWith("question=") || receivedText.startsWith("message=") || receivedText.startsWith("answer_result=") || receivedText.startsWith("login"))
+    if (receivedText.startsWith("question=") || receivedText.startsWith("message=")
+     || receivedText.startsWith("answer_result=") || receivedText.startsWith("login")
+     || receivedText.startsWith("Connecting") || receivedText.startsWith("Wifi")
+     || receivedText.startsWith("Sub"))
     {
       String msg = receivedText.substring(receivedText.indexOf('=') + 1, receivedText.length() - 1);
       int msgLength = msg.length();

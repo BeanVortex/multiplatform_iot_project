@@ -28,6 +28,9 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
     case WStype_TEXT:
         Serial.print("[WSc] get text: \n");
         Serial.println(message);
+        if (message.startsWith("Successfully sub"))
+            Serial.println("Subscribed");
+
         if (message.equals("login success"))
             playLoginSuccessTone();
 

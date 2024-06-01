@@ -24,8 +24,10 @@ void setup()
 {
   Serial.begin(9600);
   Serial1.begin(115200);
+  Serial.flush();
 
   Serial1.println("Connecting to wifi");
+  Serial.println("\nConnecting to wifi");
   pinMode(buzz, OUTPUT);
 
   WiFiMulti.addAP(ssid, password);
@@ -35,7 +37,7 @@ void setup()
     delay(500);
   }
   Serial1.println("\nWifi connected");
-  Serial.flush();
+  Serial.println("Wifi connected");
   initWebsocket();
 }
 
