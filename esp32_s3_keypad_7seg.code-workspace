@@ -4,11 +4,11 @@
 			"path": "esp32_s3_keypad_7seg"
 		},
 		{
-			"path": "nano_lcd_buzzer"
-		},
-		{
 			"name": "esp8266_audio",
 			"path": "esp8266_audio"
+		},
+		{
+			"path": "nano_lcd"
 		}
 	],
 	"settings": {

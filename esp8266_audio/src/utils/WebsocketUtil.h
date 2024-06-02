@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <WebSocketsClient.h>
 #include "AESUtil.h"
+#include "DYPlayerArduino.h"
 
 
 void initWebsocket();

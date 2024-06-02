@@ -5,6 +5,8 @@ const char *serverUrl = "/chat";
 const int serverPort = 8080;
 WebSocketsClient webSocket;
 
+DY::Player player;
+
 const int buzz = 5;
 
 void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
@@ -39,6 +41,12 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
 
         if (message.equals("login failed") || message.equals("answer_result=Wrong answer"))
             playFailedTone();
+
+        if (message.startsWith("play_num="))
+        {
+            int fileNumber = message.substring(message.indexOf('=') + 1).toInt();
+            player.playSpecified(fileNumber);
+        }
 
         break;
     case WStype_BIN:
