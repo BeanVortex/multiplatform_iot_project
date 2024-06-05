@@ -33,14 +33,12 @@ const disconnect = () => {
     console.log("Disconnected");
 }
 
-const sendMessage = () => websocket.send(encryptMsg(messageInput.value));
+const sendMessage = () => websocket.send(encrypt(messageInput.value));
 
 const showMessage = message => {
-    decryptMsg(message).then(decryptedMsg => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${decryptedMsg}</td>`
-        messagesBody.appendChild(tr);
-    });
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${decrypt(message)}</td>`
+    messagesBody.appendChild(tr);
 }
 connectBtn.onclick = connect;
 disconnectBtn.onclick = disconnect;
