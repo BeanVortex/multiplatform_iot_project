@@ -1,12 +1,25 @@
 package org.beanvortex.androidclient.websocket;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import org.beanvortex.androidclient.utils.AESUtil;
+import org.beanvortex.androidclient.utils.Message;
+import org.beanvortex.androidclient.utils.MessageAdapter;
 
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 
 public class WebsocketListener extends WebSocketListener {
+    private final MessageAdapter messageAdapter;
+    private Handler mainHandler;
+
+    public WebsocketListener(MessageAdapter messageAdapter) {
+        mainHandler = new Handler(Looper.getMainLooper());
+        this.messageAdapter = messageAdapter;
+    }
+
     @Override
     public void onOpen(WebSocket webSocket, Response response) {
         super.onOpen(webSocket, response);
@@ -18,8 +31,7 @@ public class WebsocketListener extends WebSocketListener {
     public void onMessage(WebSocket webSocket, String text) {
         super.onMessage(webSocket, text);
         try {
-            String msg = AESUtil.decrypt(text.substring(3));
-            System.out.println("Received message: " + msg);
+            mainHandler.post(() -> messageAdapter.addMessage(new Message(AESUtil.decryptMsg(text))));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
