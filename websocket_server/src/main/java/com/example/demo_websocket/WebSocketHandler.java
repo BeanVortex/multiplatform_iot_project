@@ -7,7 +7,6 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Set;
 
 import static com.example.demo_websocket.AESUtil.decrypt;
@@ -18,7 +17,11 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     private final Set<WebSocketSession> subscribedSessions = new HashSet<>();
     private static final String LOGIN_PASS = "1234";
-    private int questionResult;
+    private final CommandService commandService;
+
+    public WebSocketHandler(CommandService commandService) {
+        this.commandService = commandService;
+    }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
@@ -41,40 +44,19 @@ public class WebSocketHandler extends TextWebSocketHandler {
             else
                 broadcastMessage("login failed");
         } else if (payload.startsWith("new_question")) {
-            var question = generateArithmeticQuestion();
+            var question = commandService.generateArithmeticQuestion();
             broadcastMessage("question=" + question);
         } else if (payload.startsWith("answer")) {
-            if (questionResult == Integer.parseInt(payload.substring(payload.indexOf("=") + 1)))
+            if (commandService.questionResult == Integer.parseInt(payload.substring(payload.indexOf("=") + 1)))
                 broadcastMessage("answer_result=Correct answer");
             else
                 broadcastMessage("answer_result=Wrong answer");
         } else {
-            broadcastMessage(payload);
+            var result = commandService.processCommand(payload);
+            broadcastMessage(result);
         }
     }
 
-
-    private String generateArithmeticQuestion() {
-        var random = new Random();
-        var num1 = random.nextInt(100) + 1;
-        var num2 = random.nextInt(100) + 1;
-        var operator = getRandomOperator(random);
-        switch (operator) {
-            case '+' -> questionResult = num1 + num2;
-            case '-' -> questionResult = num1 > num2 ? num1 - num2 : num2 - num1;
-            case '*' -> questionResult = num1 * num2;
-            case '/' -> questionResult = num1 > num2 ? num1 / num2 : num2 / num1;
-        }
-        return num1 > num2
-                ? num1 + " " + operator + " " + num2
-                : num2 + " " + operator + " " + num1;
-    }
-
-    private char getRandomOperator(Random random) {
-        var operators = new char[]{'+', '-', '*', '/'};
-        var index = random.nextInt(operators.length);
-        return operators[index];
-    }
 
     private void broadcastMessage(String message) throws Exception {
         for (var subscriber : subscribedSessions)
