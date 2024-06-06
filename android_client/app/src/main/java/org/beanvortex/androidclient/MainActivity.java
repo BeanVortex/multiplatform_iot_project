@@ -1,5 +1,7 @@
 package org.beanvortex.androidclient;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
@@ -15,7 +17,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import org.beanvortex.androidclient.utils.AESUtil;
 import org.beanvortex.androidclient.utils.Message;
 import org.beanvortex.androidclient.utils.MessageAdapter;
-import org.beanvortex.androidclient.websocket.WebsocketListener;
+import org.beanvortex.androidclient.websocket.WebsocketClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +30,6 @@ import okhttp3.WebSocket;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_SPEECH_INPUT = 1;
-    private WebSocket webSocket;
 
     private TextInputEditText promptEditText;
 
@@ -36,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        createNotificationChannel();
         promptEditText = findViewById(R.id.promptEditText);
         MaterialButton sendButton = findViewById(R.id.sendButton);
         MaterialButton voiceButton = findViewById(R.id.voiceButton);
@@ -47,17 +48,14 @@ public class MainActivity extends AppCompatActivity {
         messagesRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         messagesRecyclerView.setAdapter(messageAdapter);
 
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder().url("ws://192.168.1.105:8080/chat").build();
-        WebsocketListener listener = new WebsocketListener(messageAdapter);
-        webSocket = client.newWebSocket(request, listener);
-        client.dispatcher().executorService().shutdown();
+        WebsocketClient wc = new WebsocketClient(messageAdapter, this);
+        wc.connect();
 
         sendButton.setOnClickListener(v -> {
             String messageText = promptEditText.getText().toString().trim();
             if (!messageText.isEmpty()) {
                 try {
-                    webSocket.send(AESUtil.encryptMsg(messageText));
+                    wc.sendMsg(messageText);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -91,5 +89,17 @@ public class MainActivity extends AppCompatActivity {
                     promptEditText.setText(result.get(0));
             }
         }
+    }
+
+
+    public static final String CHANNEL_ID = "fire_alert_channel";
+    private void createNotificationChannel() {
+        CharSequence name = "android client fire channel ";
+        String description = "fire channel description";
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+        channel.setDescription(description);
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
     }
 }

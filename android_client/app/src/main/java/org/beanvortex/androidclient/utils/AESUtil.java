@@ -10,7 +10,7 @@ public class AESUtil {
     private static final String ALGORITHM = "AES";
     private static final String KEY = "%HELLO_KEY%&1556";
 
-    public static String encrypt(String data) throws Exception {
+    private static String encrypt(String data) throws Exception {
         SecretKeySpec secretKey = new SecretKeySpec(KEY.getBytes(), ALGORITHM);
         Cipher cipher = Cipher.getInstance(ALGORITHM);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
@@ -18,7 +18,7 @@ public class AESUtil {
         return Base64.getEncoder().encodeToString(encrypted);
     }
 
-    public static String decrypt(String encryptedData) throws Exception {
+    private static String decrypt(String encryptedData) throws Exception {
         SecretKeySpec secretKey = new SecretKeySpec(KEY.getBytes(), ALGORITHM);
         Cipher cipher = Cipher.getInstance(ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, secretKey);

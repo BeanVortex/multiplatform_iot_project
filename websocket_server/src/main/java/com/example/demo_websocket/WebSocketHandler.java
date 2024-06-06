@@ -51,6 +51,10 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 broadcastMessage("answer_result=Correct answer");
             else
                 broadcastMessage("answer_result=Wrong answer");
+        } else if (payload.startsWith("play_num")) {
+            broadcastMessage(payload);
+        } else if (payload.startsWith("Fire")) {
+            broadcastMessage(payload);
         } else {
             var result = commandService.processCommand(payload);
             broadcastMessage(result);
