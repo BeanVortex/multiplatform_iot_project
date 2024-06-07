@@ -6,12 +6,17 @@ This project is a multiplatform system with three main components:
 
 * Handles requests from the other two platforms (Android client and embedded devices).
 * Has a web HTML client interface for user interaction.
-* A simple command proccessing like responding to the questions like "what is the date and time", "greetings", "weather", "generating new mathematics question"
+* A simple command processing like responding to the questions like "what is the date and time", "greetings", "
+  weather", "generating new mathematics question"
+
+![web_client](./imgs/web_client.png)
 
 **2. Android Client:**
 
 * Functions similarly to the web HTML client, interacting with the server.
 * \+ speech to text api
+  ![android1](./imgs/android1.jpg)
+  ![android2](./imgs/android2.jpg)
 
 **3. Embedded Devices (Focus):**
 
@@ -31,7 +36,7 @@ This project is a multiplatform system with three main components:
 
 **Functionality of ESP32 S3 System:**
 
-**Image Suggestion:** Here, include a diagram showcasing the ESP32 S3 system with all the connected components. Label each component for clarity.
+![esp32](./imgs/esp32.jpg)
 
 1. **WiFi Connection and Websocket Subscription:**
     * The ESP32 S3 connects to a WiFi network.
@@ -59,14 +64,16 @@ This project is a multiplatform system with three main components:
     * The user enters their answer, displayed on the 7-segment display.
     * Pressing "#" sends the answer to the server for evaluation.
     * Based on the server's response (correct/incorrect), a message is displayed on the 7-segment display.
-      
+
 5. **Cancelling ongoing operations:**
-    * The user presses the "B" button to cancell the operations described before
+    * The user presses the "B" button to cancel the operations described before
 
 **Functionalities of Other Components (Brief Descriptions):**
 
+![nano_8266](./imgs/nano_8266.jpg)
+
 * **ESP8266 with DY Audio Module, Speaker, and Buzzer:**
-    * Similar WiFi and server connection process as ESP32 S3.
+    * Similar Wi-Fi and server connection process as ESP32 S3.
     * Uses the buzzer for notifications.
     * Uses the speaker and DY module to play audio responses based on user actions.
     * Communicates with the Arduino Nano using RX/TX pins.
