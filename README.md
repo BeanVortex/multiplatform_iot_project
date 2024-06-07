@@ -13,10 +13,13 @@ This project is a multiplatform system with three main components:
 
 **2. Android Client:**
 
+  
 * Functions similarly to the web HTML client, interacting with the server.
 * \+ speech to text api
+
   ![android1](./imgs/android1.jpg)
   ![android2](./imgs/android2.jpg)
+
 
 **3. Embedded Devices (Focus):**
 
