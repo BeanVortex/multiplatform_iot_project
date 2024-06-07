@@ -10,6 +10,7 @@ This project is a multiplatform system with three main components:
 **2. Android Client:**
 
 * Functions similarly to the web HTML client, interacting with the server.
+* \+ speech to text api
 
 **3. Embedded Devices (Focus):**
 
