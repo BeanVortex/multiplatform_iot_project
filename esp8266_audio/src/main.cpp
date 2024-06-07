@@ -42,7 +42,7 @@ void setup()
   Serial.flush();
 
   player.begin();
-  player.setVolume(20); // Set Volume to 66%
+  player.setVolume(30); // Set Volume to 100%
   Serial1.println("Connecting to wifi");
   Serial.println("\nConnecting to wifi");
   pinMode(buzz, OUTPUT);

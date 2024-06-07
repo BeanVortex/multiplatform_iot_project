@@ -128,6 +128,7 @@ void modeA(char key)
         int seconds = number % 100;
         count_down_value = minutes * 60 + seconds;
         count_down_mode = false;
+        websocketSendTXT("count_status=started");
       }
     }
     // ascii for numbers
@@ -214,6 +215,8 @@ void count_down()
     {
       count_down_value--;
       previousMillis = currentMillis;
+      if (count_down_value == 0)
+        websocketSendTXT("count_status=finished");      
     }
   }
   else if (!count_down_mode && !answer_mode && !login_mode)

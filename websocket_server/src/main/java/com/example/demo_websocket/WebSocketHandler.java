@@ -29,6 +29,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         if (payload.startsWith("{e}"))
             payload = decrypt(payload.substring(3));
 
+
         if (payload.equalsIgnoreCase("subscribe")) {
             if (subscribedSessions.contains(session)) {
                 session.sendMessage(encryptedTextMessage("You have already subscribed to channel"));
@@ -36,27 +37,42 @@ public class WebSocketHandler extends TextWebSocketHandler {
             }
             subscribedSessions.add(session);
             session.sendMessage(encryptedTextMessage("Successfully subscribed"));
+            session.sendMessage(encryptedTextMessage("play_num=1"));
         } else if (payload.equalsIgnoreCase("unsubscribe")) {
             subscribedSessions.remove(session);
         } else if (payload.startsWith("login_pass")) {
-            if (payload.substring(payload.indexOf('=') + 1).equals(LOGIN_PASS))
+            if (payload.substring(payload.indexOf('=') + 1).equals(LOGIN_PASS)) {
                 broadcastMessage("login success");
-            else
+                broadcastMessage("play_num=2");
+            } else {
                 broadcastMessage("login failed");
+                broadcastMessage("play_num=3");
+            }
+        } else if (payload.startsWith("count_status=")) {
+            if (payload.contains("started"))
+                broadcastMessage("play_num=4");
+            else
+                broadcastMessage("play_num=5");
         } else if (payload.startsWith("new_question")) {
             var question = commandService.generateArithmeticQuestion();
             broadcastMessage("question=" + question);
+            broadcastMessage("play_num=6");
         } else if (payload.startsWith("answer")) {
-            if (commandService.questionResult == Integer.parseInt(payload.substring(payload.indexOf("=") + 1)))
+            if (commandService.questionResult == Integer.parseInt(payload.substring(payload.indexOf("=") + 1))) {
                 broadcastMessage("answer_result=Correct answer");
-            else
+                broadcastMessage("play_num=7");
+            } else {
                 broadcastMessage("answer_result=Wrong answer");
+                broadcastMessage("play_num=8");
+            }
         } else if (payload.startsWith("play_num")) {
             broadcastMessage(payload);
         } else if (payload.startsWith("Fire")) {
-            broadcastMessage(payload);
+            broadcastMessage("play_num=9");
         } else {
             var result = commandService.processCommand(payload);
+            if (result.contains("question"))
+                broadcastMessage("play_num=6");
             broadcastMessage(result);
         }
     }
