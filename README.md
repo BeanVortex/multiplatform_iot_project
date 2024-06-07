@@ -84,3 +84,18 @@ This project is a multiplatform system with three main components:
     * Detects fire with the IR sensor.
     * Upon fire detection, sends a signal to the ESP8266.
     * The ESP8266 relays the fire alert signal to the server for broadcasting to connected devices.
+
+
+### Devices pinout 
+
+* esp32 s3
+
+![esp32_s3](./imgs/esp32_s3_pinout.webp)
+
+* esp8266 12e
+
+![esp32_s3](./imgs/ESP8266_12x_pinout.jpg)
+
+* arduino nano
+
+![esp32_s3](./imgs/nano_pinout.png)
