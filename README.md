@@ -6,6 +6,7 @@ This project is a multiplatform system with three main components:
 
 * Handles requests from the other two platforms (Android client and embedded devices).
 * Has a web HTML client interface for user interaction.
+* A simple command proccessing like responding to the questions like "what is the date and time", "greetings", "weather", "generating new mathematics question"
 
 **2. Android Client:**
 
