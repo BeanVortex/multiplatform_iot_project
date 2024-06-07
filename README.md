@@ -8,6 +8,7 @@ This project is a multiplatform system with three main components:
 * Has a web HTML client interface for user interaction.
 * A simple command processing like responding to the questions like "what is the date and time", "greetings", "
   weather", "generating new mathematics question"
+* Communications are end-to-end encrypted in server and clients
 
 ![web_client](./imgs/web_client.png)
 
