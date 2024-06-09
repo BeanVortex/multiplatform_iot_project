@@ -1,9 +1,9 @@
 // gnd          gnd
-// pow          13      /ok
-// 3   /ok      14      /ok
+// pow          48      /ok
+// 3   /ok      47      /ok
 // 9   /ok      21      /ok
-// 10  /ok      47      /ok
-// 11  /ok      48      /ok
+// 10  /ok      14      /ok
+// 11  /ok      13      /ok
 // 12  /ok      35      /ok
 // 4   /ok      36      /ok
 // 5   /ok      37      /ok
@@ -12,10 +12,10 @@
 // 15  /ok      40      /ok
 // 16  /ok      41      /ok
 // 17  /ok      42      /ok
-// 18  /ok      2       /not ok / wire
-// 8   /ok      1       /not ok / wire
-// 19  /ok      43 tx   /ok
-// 20  /ok      44 rx   /ok
+// 18  /ok      44      rx  ok
+// 8   /ok      43      tx  ok
+// 19  /ok      2       /ok
+// 20  /ok      1       /ok
 
 #include <Arduino.h>
 #include <WiFi.h>
