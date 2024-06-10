@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import org.beanvortex.androidclient.utils.AESUtil;
 import org.beanvortex.androidclient.utils.Message;
@@ -32,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_SPEECH_INPUT = 1;
 
     private TextInputEditText promptEditText;
+    private WebsocketClient wc;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,18 +41,23 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         createNotificationChannel();
         promptEditText = findViewById(R.id.promptEditText);
+        TextInputEditText ipEditText = findViewById(R.id.ipEditText);
         MaterialButton sendButton = findViewById(R.id.sendButton);
+        MaterialButton connectButton = findViewById(R.id.connectButton);
         MaterialButton voiceButton = findViewById(R.id.voiceButton);
         RecyclerView messagesRecyclerView = findViewById(R.id.messagesRecyclerView);
-
+        TextInputLayout ipParent = findViewById(R.id.ipParent);
         List<Message> messageList = new ArrayList<>();
         MessageAdapter messageAdapter = new MessageAdapter(messageList);
         messagesRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         messagesRecyclerView.setAdapter(messageAdapter);
 
-        WebsocketClient wc = new WebsocketClient(messageAdapter, this);
-        wc.connect();
 
+        connectButton.setOnClickListener(view -> {
+            String url = ipEditText.getText().toString();
+            wc = new WebsocketClient(messageAdapter, url, connectButton, ipParent, this);
+            wc.connect();
+        });
         sendButton.setOnClickListener(v -> {
             String messageText = promptEditText.getText().toString().trim();
             if (!messageText.isEmpty()) {
@@ -93,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     public static final String CHANNEL_ID = "fire_alert_channel";
+
     private void createNotificationChannel() {
         CharSequence name = "android client fire channel ";
         String description = "fire channel description";

@@ -4,10 +4,15 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import org.beanvortex.androidclient.MainActivity;
 import org.beanvortex.androidclient.R;
@@ -24,19 +29,25 @@ import okio.ByteString;
 
 public class WebsocketClient {
 
-    private static final String WEBSOCKET_URL = "ws://192.168.1.105:8080/chat";
+    private final String WEBSOCKET_URL/* = "ws://192.168.1.105:8080/chat"*/;
     private final OkHttpClient client;
     private WebSocket webSocket;
     private final long RECONNECT_INTERVAL = 1000;
     private final MessageAdapter messageAdapter;
     private Handler mainHandler;
     private final Context context;
+    private final MaterialButton connectButton;
+    private final TextInputLayout ipParent;
 
-    public WebsocketClient(MessageAdapter messageAdapter, Context context) {
+    public WebsocketClient(MessageAdapter messageAdapter, String url, MaterialButton connectButton,
+                           TextInputLayout ipParent, Context context) {
         mainHandler = new Handler(Looper.getMainLooper());
+        WEBSOCKET_URL = "ws://" + url;
         this.messageAdapter = messageAdapter;
         this.context = context;
         client = new OkHttpClient();
+        this.connectButton = connectButton;
+        this.ipParent = ipParent;
     }
 
     public void connect() {
@@ -65,6 +76,8 @@ public class WebsocketClient {
         public void onOpen(WebSocket webSocket, Response response) {
             WebsocketClient.this.webSocket = webSocket;
             System.out.println("WebSocket connection opened!");
+            connectButton.setVisibility(View.GONE);
+            ipParent.setVisibility(View.GONE);
             webSocket.send(AESUtil.encryptMsg("subscribe"));
         }
 
