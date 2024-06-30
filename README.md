@@ -36,7 +36,7 @@ This project is a multiplatform system with three main components:
 6. Passive Buzzer
 7. Liquid Crystal Display (LCD)
 8. IR Fire Sensor
-9. (Optional) Arduino Nano (if using for prototyping)
+9. Arduino Nano
 
 **Functionality of ESP32 S3 System:**
 
